@@ -1,0 +1,7 @@
+{
+  "id": "type:Integer",
+  "post_id": "type:Integer",
+  "name": "type:String",
+  "email": "type:String",
+  "body": "type:String"
+}

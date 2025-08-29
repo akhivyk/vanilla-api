@@ -1,0 +1,12 @@
+query {
+    users(after: null) {
+        edges {
+            cursor
+            node {
+                id
+                name
+                email
+            }
+        }
+    }
+}

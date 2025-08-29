@@ -1,0 +1,7 @@
+{
+  "id": "type:Integer",
+  "name": "type:String",
+  "email": "type:String",
+  "gender": "type:String",
+  "status": "type:String"
+}
