@@ -1,6 +1,6 @@
 package com.solvd.enums;
 
-public enum HttpMethodTypeEnum {
+public enum HttpMethod {
     GET,
     POST,
     PUT,

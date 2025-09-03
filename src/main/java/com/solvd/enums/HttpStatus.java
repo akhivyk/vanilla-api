@@ -1,6 +1,6 @@
 package com.solvd.enums;
 
-public enum StatusCodeEnum {
+public enum HttpStatus {
     OK(200),
     CREATED(201),
     NO_CONTENT(204),
@@ -8,7 +8,7 @@ public enum StatusCodeEnum {
 
     private final int STATUS_CODE;
 
-    StatusCodeEnum(int statusCode) {
+    HttpStatus(int statusCode) {
         this.STATUS_CODE = statusCode;
     }
 

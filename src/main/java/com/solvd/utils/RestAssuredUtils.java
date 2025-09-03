@@ -1,6 +1,6 @@
 package com.solvd.utils;
 
-import com.solvd.enums.StatusCodeEnum;
+import com.solvd.enums.HttpStatus;
 import io.restassured.http.ContentType;
 import io.restassured.module.jsv.JsonSchemaValidator;
 import io.restassured.response.Response;
@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class RestAssuredUtils {
 
-    public static void assertStatusCode(Response response, StatusCodeEnum statusCode) {
-        response.then().assertThat().statusCode(statusCode.getStatusCode());
+    public static void assertStatusCode(Response response, HttpStatus httpStatus) {
+        response.then().assertThat().statusCode(httpStatus.getStatusCode());
     }
 
     public static void assertContentType(Response response, ContentType contentType) {

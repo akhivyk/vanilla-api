@@ -1,29 +1,39 @@
 package com.solvd.utils;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.InputStream;
 import java.util.Properties;
 
 public class FileReader {
-    public static String getConfigValue(String value) {
-        Properties properties = new Properties();
-        try {
-            properties.load(new FileInputStream("src/main/resources/config.properties"));
+    private static final Properties properties = new Properties();
 
-            return properties.getProperty(value);
+    static {
+        try (InputStream inputStream = FileReader.class
+                .getClassLoader()
+                .getResourceAsStream("config.properties")) {
+
+            if (inputStream == null) {
+                throw new RuntimeException("config.properties not found in classpath!");
+            }
+            properties.load(inputStream);
         } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException("Failed to load config.properties", e);
         }
+    }
+
+    public static String getConfigValue(String key) {
+        return properties.getProperty(key);
     }
 
     public static String getQueryFromFile(String path) {
         try {
-            return new String(Files.readAllBytes(Paths.get(path)));
+            InputStream inputStream = FileReader.class.getClassLoader().getResourceAsStream(path);
+            if (inputStream == null) {
+                throw new RuntimeException("File not found in classpath: " + path);
+            }
+            return new String(inputStream.readAllBytes());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to load query from file: " + path, e);
         }
     }
 }
