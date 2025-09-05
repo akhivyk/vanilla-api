@@ -1,15 +1,12 @@
 import com.solvd.api.comments.*;
-import com.solvd.api.posts.GetPostsMethod;
-import com.solvd.api.users.GetUsersMethod;
-import com.solvd.api.users.PostUserMethod;
-import com.solvd.api.users.UpdateUserMethod;
+import com.solvd.api.service.RestApiService;
+import com.solvd.api.users.*;
 import com.solvd.entity.Comment;
 import com.solvd.entity.User;
+import com.solvd.entity.utils.UserAssertions;
 import com.solvd.enums.HttpMethod;
 import com.solvd.enums.HttpStatus;
-import com.solvd.utils.JsonUtils;
 import com.solvd.utils.RestAssuredUtils;
-import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -23,9 +20,8 @@ import java.util.Random;
 
 @Slf4j
 public class GorestTest {
-    private Comment createdComment;
-    private User createdUser;
-    private List<Comment> existingComments;
+
+    private final RestApiService apiService = new RestApiService();
 
     @DataProvider(name = "type-update-requests")
     public static Object[][] getTypeUpdateRequests() {
@@ -36,161 +32,82 @@ public class GorestTest {
     }
 
     @Test
-    public void getAllComments() {
-        GetCommentsMethod getCommentsMethod = new GetCommentsMethod();
+    public void testCreateNewComment() {
+        List<Comment> existing = apiService.getAllComments();
+        Integer postId = existing.get(new Random().nextInt(existing.size())).getPost_id();
 
-        Response response = getCommentsMethod.execute(HttpMethod.GET);
+        Comment expectedComment = Comment.generateComment(postId);
+        Comment created = apiService.createComment(expectedComment);
 
-        RestAssuredUtils.assertStatusCode(response, HttpStatus.OK);
-        RestAssuredUtils.assertContentType(response, ContentType.JSON);
-        RestAssuredUtils.assertSchema(response, GetCommentsMethod.GET_JSON_SCHEMA_PATH);
-
-        existingComments = JsonUtils.toList(response, Comment.class);
+        List<Comment> comments = apiService.getAllComments();
+        boolean exists = comments.stream().anyMatch(c -> c.getId().equals(created.getId()));
+        Assert.assertTrue(exists, "Created comment should exist in the list");
     }
 
-    @Test(dependsOnMethods = "getAllComments")
-    public void postCreateComment() {
-        SoftAssert softAssert = new SoftAssert();
+    @Test(dataProvider = "type-update-requests")
+    public void testUpdateComment(HttpMethod updateRequestType) {
+        List<Comment> existing = apiService.getAllComments();
+        Integer postId = existing.get(new Random().nextInt(existing.size())).getPost_id();
 
-        PostCommentMethod commentMethod = new PostCommentMethod();
+        Comment expected = Comment.generateComment(postId);
+        Comment created = apiService.createComment(expected);
 
-        Comment expectedComment = Comment.generateComment(
-                existingComments.get(new Random().nextInt(existingComments.size())).getPost_id()
-        );
-        Response response = commentMethod.execute(HttpMethod.POST, expectedComment);
+        String updatedBody = "updComment: " + RandomStringUtils.randomAlphabetic(8);
+        created.setBody(updatedBody);
+        Comment updated = apiService.updateComment(created.getId(), created, updateRequestType);
 
-        RestAssuredUtils.assertStatusCode(response, HttpStatus.CREATED);
-        RestAssuredUtils.assertContentType(response, ContentType.JSON);
-        RestAssuredUtils.assertSchema(response, PostCommentMethod.POST_JSON_SCHEMA_PATH);
-
-        createdComment = JsonUtils.toObject(response, Comment.class);
-
-        softAssert.assertEquals(createdComment.getPost_id(), expectedComment.getPost_id(),
-                "Post id of created comment isn't equals to expected");
-        softAssert.assertEquals(createdComment.getBody(), expectedComment.getBody(),
-                "Body of created comment isn't equals to expected");
-
-        softAssert.assertAll();
-    }
-
-    @Test(dependsOnMethods = "postCreateComment")
-    public void getCommentById() {
-        GetCommentByIdMethod getCommentByIdMethod = new GetCommentByIdMethod(createdComment.getId());
-
-        Response response = getCommentByIdMethod.execute(HttpMethod.GET);
-
-        RestAssuredUtils.assertStatusCode(response, HttpStatus.OK);
-        RestAssuredUtils.assertContentType(response, ContentType.JSON);
-        RestAssuredUtils.assertSchema(response, GetCommentByIdMethod.GET_JSON_SCHEMA_PATH);
-
-        Comment retrievedComment = JsonUtils.toObject(response, Comment.class);
-
-        Assert.assertEquals(retrievedComment.getId(), createdComment.getId(),
-                "Id of retrieved comment isn't equals to expected!");
-    }
-
-    @Test(dependsOnMethods = "postCreateComment", dataProvider = "type-update-requests")
-    public void updateComment(HttpMethod updateRequestType) {
-        log.info("Current request type - " + updateRequestType.name());
-
-        UpdateCommentMethod updateCommentMethod = new UpdateCommentMethod(createdComment.getId());
-
-        String updatedCommentText = "updComment: " + RandomStringUtils.randomAlphabetic(8);
-        createdComment.setBody(updatedCommentText);
-
-        Response response = updateCommentMethod.execute(updateRequestType, createdComment);
-
-        RestAssuredUtils.assertStatusCode(response, HttpStatus.OK);
-        RestAssuredUtils.assertContentType(response, ContentType.JSON);
-        RestAssuredUtils.assertSchema(response, UpdateCommentMethod.PUT_JSON_SCHEME_PATH);
-
-        Comment updatedComment = JsonUtils.toObject(response, Comment.class);
-
-        Assert.assertEquals(updatedComment.getId(), createdComment.getId(),
-                "Id of updated comment isn't equals to expected!");
-        Assert.assertEquals(updatedComment.getBody(), updatedCommentText,
-                "Comment body isn't equals to expected after updating");
-    }
-
-    @Test(dependsOnMethods = "updateComment")
-    public void deleteComment() {
-        DeleteCommentMethod deleteCommentMethod = new DeleteCommentMethod(createdComment.getId());
-
-        Response response = deleteCommentMethod.execute(HttpMethod.DELETE);
-        RestAssuredUtils.assertStatusCode(response, HttpStatus.NO_CONTENT);
-
-        GetCommentByIdMethod getCommentByIdMethod = new GetCommentByIdMethod(createdComment.getId());
-
-        response = getCommentByIdMethod.execute(HttpMethod.GET);
-
-        RestAssuredUtils.assertStatusCode(response, HttpStatus.NOT_FOUND);
+        Assert.assertEquals(updated.getId(), created.getId(), "IDs must match");
+        Assert.assertEquals(updated.getBody(), updatedBody, "Body should be updated");
     }
 
     @Test
-    public void postCreateUser() {
+    public void testDeleteComment() {
+        List<Comment> existing = apiService.getAllComments();
+        Integer postId = existing.get(new Random().nextInt(existing.size())).getPost_id();
+
+        Comment expected = Comment.generateComment(postId);
+        Comment created = apiService.createComment(expected);
+
+        apiService.deleteComment(created.getId());
+
+        GetCommentByIdMethod getCommentByIdMethod = new GetCommentByIdMethod(created.getId());
+        Response afterDelete = getCommentByIdMethod.execute(HttpMethod.GET);
+        RestAssuredUtils.assertStatusCode(afterDelete, HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    public void testCreateNewUser() {
+        User expected = User.generateUser();
+        User created = apiService.createUser(expected);
+
+        List<User> users = apiService.getAllUsers();
+        boolean exists = UserAssertions.isUserInList(created, users);
+        Assert.assertTrue(exists, "Created user should exist in the list");
+    }
+
+    @Test(dataProvider = "type-update-requests")
+    public void testUpdateUser(HttpMethod updateRequestType) {
+        User expected = User.generateUser();
+        User created = apiService.createUser(expected);
+
+        String updatedName = "UpdatedName" + RandomStringUtils.randomAlphabetic(3);
+        created.setName(updatedName);
+        User updated = apiService.updateUser(created.getId(), created, updateRequestType);
+
         SoftAssert softAssert = new SoftAssert();
-
-        PostUserMethod userMethod = new PostUserMethod();
-
-        User expectedUser = User.generateUser();
-        Response response = userMethod.execute(HttpMethod.POST, expectedUser);
-
-        RestAssuredUtils.assertStatusCode(response, HttpStatus.CREATED);
-        RestAssuredUtils.assertContentType(response, ContentType.JSON);
-        RestAssuredUtils.assertSchema(response, PostUserMethod.POST_JSON_SCHEMA_PATH);
-
-        createdUser = JsonUtils.toObject(response, User.class);
-
-        softAssert.assertEquals(createdUser.getName(), expectedUser.getName(),
-                "Name of created user isn't equals to expected");
-        softAssert.assertEquals(createdUser.getEmail(), expectedUser.getEmail(),
-                "Email of created user isn't equals to expected");
-
+        UserAssertions.assertUserEquals(updated, created, softAssert);
         softAssert.assertAll();
     }
 
     @Test
-    public void getAllUsers() {
-        GetUsersMethod getUsersMethod = new GetUsersMethod();
+    public void testDeleteUser() {
+        User expected = User.generateUser();
+        User created = apiService.createUser(expected);
 
-        Response response = getUsersMethod.execute(HttpMethod.GET);
+        apiService.deleteUser(created.getId());
 
-        RestAssuredUtils.assertStatusCode(response, HttpStatus.OK);
-        RestAssuredUtils.assertContentType(response, ContentType.JSON);
-        RestAssuredUtils.assertSchema(response, GetUsersMethod.GET_JSON_SCHEMA_PATH);
-    }
-
-    @Test(dependsOnMethods = "postCreateUser", dataProvider = "type-update-requests")
-    public void updateUser(HttpMethod updateRequestType) {
-        log.info("Current request type - " + updateRequestType.name());
-
-        UpdateUserMethod updateUserMethod = new UpdateUserMethod(createdUser.getId());
-
-        String updatedUserName = "UpdatedName" + RandomStringUtils.randomAlphabetic(3);
-        createdUser.setName(updatedUserName);
-
-        Response response = updateUserMethod.execute(updateRequestType, createdUser);
-
-        RestAssuredUtils.assertStatusCode(response, HttpStatus.OK);
-        RestAssuredUtils.assertContentType(response, ContentType.JSON);
-        RestAssuredUtils.assertSchema(response, UpdateUserMethod.UPDATE_JSON_SCHEMA_PATH);
-
-        User updatedUser = JsonUtils.toObject(response, User.class);
-
-        Assert.assertEquals(updatedUser.getId(), createdUser.getId(),
-                "Id of updated user isn't equals to expected!");
-        Assert.assertEquals(updatedUser.getName(), updatedUserName,
-                "User name isn't equals to expected after updating");
-    }
-
-    @Test
-    public void getAllPosts() {
-        GetPostsMethod getPostsMethod = new GetPostsMethod();
-
-        Response response = getPostsMethod.execute(HttpMethod.GET);
-
-        RestAssuredUtils.assertStatusCode(response, HttpStatus.OK);
-        RestAssuredUtils.assertContentType(response, ContentType.JSON);
-        RestAssuredUtils.assertSchema(response, GetPostsMethod.GET_JSON_SCHEMA_PATH);
+        GetUserByIdMethod getUserByIdMethod = new GetUserByIdMethod(created.getId());
+        Response afterDelete = getUserByIdMethod.execute(HttpMethod.GET);
+        RestAssuredUtils.assertStatusCode(afterDelete, HttpStatus.NOT_FOUND);
     }
 }

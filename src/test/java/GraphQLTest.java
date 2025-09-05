@@ -1,94 +1,62 @@
+import com.solvd.api.service.GraphQLApiService;
 import com.solvd.entity.User;
-import com.solvd.enums.HttpMethod;
-import com.solvd.graphql.GraphQLRequest;
-import com.solvd.graphql.GraphQlQuery;
-import com.solvd.utils.FileReader;
-import com.solvd.utils.RestAssuredUtils;
-import io.restassured.path.json.JsonPath;
-import io.restassured.response.Response;
+import com.solvd.utils.ConfigReader;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.List;
+
 public class GraphQLTest {
 
-    private User user;
+    private final GraphQLApiService apiService = new GraphQLApiService(ConfigReader.getConfigValue("token"));
 
-    private Response executeGraphQL(String queryPath, Object variables) {
-        GraphQLRequest graphQLRequest = new GraphQLRequest();
-        GraphQlQuery graphQlQuery = new GraphQlQuery();
-
-        String query = FileReader.getQueryFromFile(queryPath);
-        graphQlQuery.setQuery(query);
-
-        if (variables != null) {
-            graphQlQuery.setVariables(variables);
-        }
-
-        return graphQLRequest.executeGraphQL(HttpMethod.POST, graphQlQuery);
-    }
-
-    @Test(priority = 1)
-    public void getAllUsersTest() {
-        Response response = executeGraphQL(
-                "graphql/get_all_users.graphql",
-                null
-        );
-
-        RestAssuredUtils.assertSchema(response, "graphql/assertion/graphql_rs_all_users.json");
-    }
-
-    @Test(priority = 2)
-    public void createUserTest() {
+    @Test
+    public void createUserAndGetAllUsersTest() {
         User generatedUser = User.generateUser();
+        User created = apiService.createUser(generatedUser);
 
-        Response response = executeGraphQL(
-                "graphql/create_user.graphql",
-                generatedUser
-        );
+        Assert.assertNotNull(created.getId(), "User ID should be generated");
+        Assert.assertEquals(created.getName(), generatedUser.getName(), "Created user name should match input");
+        Assert.assertEquals(created.getEmail(), generatedUser.getEmail(), "Created user email should match input");
 
-        user = JsonPath.from(response.asString()).getObject("data.createUser.user", User.class);
-
-        RestAssuredUtils.assertSchema(response, "graphql/assertion/graphql_rs_user_create.json");
+        List<User> users = apiService.getAllUsers();
+        boolean exists = users.stream().anyMatch(u -> u.getId().equals(created.getId()));
+        Assert.assertTrue(exists, "User list should contain created user ID");
     }
 
-    @Test(priority = 3)
-    public void getByIdUserTest() {
-        Response response = executeGraphQL(
-                "graphql/get_user_by_id.graphql",
-                user
-        );
+    @Test
+    public void createUserAndGetByIdTest() {
+        User generatedUser = User.generateUser();
+        User created = apiService.createUser(generatedUser);
 
-        User retrievedUser = JsonPath.from(response.asString()).getObject("data.user", User.class);
-        Assert.assertEquals(retrievedUser.getId(), user.getId(), "Retrieved user id isn't equals to expected!");
+        User retrieved = apiService.getUserById(created.getId());
+        Assert.assertEquals(retrieved.getId(), created.getId(), "Retrieved user ID should equal created user ID");
     }
 
-    @Test(priority = 4)
-    public void updateUserTest() {
-        User updatedUser = User.builder()
-                .id(user.getId())
-                .name("Updated Name" + RandomStringUtils.randomAlphabetic(3))
-                .build();
+    @Test
+    public void createAndUpdateUserTest() {
+        User generatedUser = User.generateUser();
+        User created = apiService.createUser(generatedUser);
 
-        Response response = executeGraphQL(
-                "graphql/update_user.graphql",
-                updatedUser
-        );
+        String updatedName = "Updated Name" + RandomStringUtils.randomAlphabetic(3);
+        created.setName(updatedName);
 
-        User retrievedUser = JsonPath.from(response.asString()).getObject("data.updateUser.user", User.class);
+        User updated = apiService.updateUser(created);
 
-        Assert.assertEquals(retrievedUser.getId(), user.getId(), "Updated user id isn't equals to expected!");
-        Assert.assertEquals(updatedUser.getName(), retrievedUser.getName(), "Name after updating isn't equals to expected!");
+        Assert.assertEquals(updated.getId(), created.getId(), "Updated user ID should equal original user ID");
+        Assert.assertEquals(updated.getName(), updatedName, "Updated user name should match expected value");
     }
 
-    @Test(priority = 5)
-    public void deleteUserTest() {
-        Response response = executeGraphQL(
-                "graphql/delete_user.graphql",
-                user
-        );
+    @Test
+    public void createAndDeleteUserTest() {
+        User generatedUser = User.generateUser();
+        User created = apiService.createUser(generatedUser);
 
-        User deletedUser = JsonPath.from(response.asString()).getObject("data.deleteUser.user", User.class);
-        Assert.assertEquals(deletedUser.getId(), user.getId(), "Id of deleted user isn't equals to expected!");
+        User deleted = apiService.deleteUser(created.getId());
+        Assert.assertEquals(deleted.getId(), created.getId(), "Deleted user ID should equal expected ID");
+
+        User afterDelete = apiService.getUserById(created.getId());
+        Assert.assertNull(afterDelete, "User should not be retrievable after deletion");
     }
 }

@@ -21,4 +21,14 @@ public class RestAssuredUtils {
     public static void assertSchema(Response response, String schemaPath) {
         response.then().assertThat().body(JsonSchemaValidator.matchesJsonSchemaInClasspath(schemaPath));
     }
+
+    public static void validateResponse(Response response, HttpStatus expectedStatus, ContentType contentType, String schemaPath) {
+        assertStatusCode(response, expectedStatus);
+        if (contentType != null) {
+            assertContentType(response, contentType);
+        }
+        if (schemaPath != null) {
+            assertSchema(response, schemaPath);
+        }
+    }
 }

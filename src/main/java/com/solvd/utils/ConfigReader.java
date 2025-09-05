@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-public class FileReader {
+public class ConfigReader {
     private static final Properties properties = new Properties();
 
     static {
-        try (InputStream inputStream = FileReader.class
+        try (InputStream inputStream = ConfigReader.class
                 .getClassLoader()
                 .getResourceAsStream("config.properties")) {
 
@@ -27,7 +27,7 @@ public class FileReader {
 
     public static String getQueryFromFile(String path) {
         try {
-            InputStream inputStream = FileReader.class.getClassLoader().getResourceAsStream(path);
+            InputStream inputStream = ConfigReader.class.getClassLoader().getResourceAsStream(path);
             if (inputStream == null) {
                 throw new RuntimeException("File not found in classpath: " + path);
             }
