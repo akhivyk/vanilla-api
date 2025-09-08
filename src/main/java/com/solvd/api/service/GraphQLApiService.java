@@ -7,6 +7,8 @@ import com.solvd.enums.HttpStatus;
 import com.solvd.graphql.GraphQLRequest;
 import com.solvd.graphql.GraphQlQuery;
 import com.solvd.utils.ConfigReader;
+import com.solvd.utils.GraphQLJsonPaths;
+import com.solvd.utils.GraphQLQueries;
 import com.solvd.utils.RestAssuredUtils;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
@@ -38,17 +40,17 @@ public class GraphQLApiService {
     }
 
     public User createUser(User user) {
-        Response response = executeGraphQL("graphql/create_user.graphql", user);
+        Response response = executeGraphQL(GraphQLQueries.CREATE_USER, user);
         RestAssuredUtils.assertStatusCode(response, HttpStatus.OK);
-        return JsonPath.from(response.asString()).getObject("data.createUser.user", User.class);
+        return JsonPath.from(response.asString()).getObject(GraphQLJsonPaths.CREATE_USER_NODE, User.class);
     }
 
     public List<User> getAllUsers() {
-        Response response = executeGraphQL("graphql/get_all_users.graphql", null);
+        Response response = executeGraphQL(GraphQLQueries.GET_ALL_USERS, null);
         RestAssuredUtils.assertStatusCode(response, HttpStatus.OK);
 
         List<Map<String, Object>> nodes = JsonPath.from(response.asString())
-                .getList("data.users.edges.node");
+                .getList(GraphQLJsonPaths.ALL_USERS_NODE);
 
         ObjectMapper mapper = new ObjectMapper();
         return nodes.stream()
@@ -58,21 +60,21 @@ public class GraphQLApiService {
 
     public User getUserById(Integer id) {
         User request = User.builder().id(id).build();
-        Response response = executeGraphQL("graphql/get_user_by_id.graphql", request);
+        Response response = executeGraphQL(GraphQLQueries.GET_USER_BY_ID, request);
         RestAssuredUtils.assertStatusCode(response, HttpStatus.OK);
-        return JsonPath.from(response.asString()).getObject("data.user", User.class);
+        return JsonPath.from(response.asString()).getObject(GraphQLJsonPaths.USER_BY_ID_NODE, User.class);
     }
 
     public User updateUser(User user) {
-        Response response = executeGraphQL("graphql/update_user.graphql", user);
+        Response response = executeGraphQL(GraphQLQueries.UPDATE_USER, user);
         RestAssuredUtils.assertStatusCode(response, HttpStatus.OK);
-        return JsonPath.from(response.asString()).getObject("data.updateUser.user", User.class);
+        return JsonPath.from(response.asString()).getObject(GraphQLJsonPaths.UPDATE_USER_NODE, User.class);
     }
 
     public User deleteUser(Integer id) {
         User request = User.builder().id(id).build();
-        Response response = executeGraphQL("graphql/delete_user.graphql", request);
+        Response response = executeGraphQL(GraphQLQueries.DELETE_USER, request);
         RestAssuredUtils.assertStatusCode(response, HttpStatus.OK);
-        return JsonPath.from(response.asString()).getObject("data.deleteUser.user", User.class);
+        return JsonPath.from(response.asString()).getObject(GraphQLJsonPaths.DELETE_USER_NODE, User.class);
     }
 }

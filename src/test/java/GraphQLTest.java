@@ -9,10 +9,9 @@ import java.util.List;
 
 public class GraphQLTest {
 
-    private final GraphQLApiService apiService = new GraphQLApiService(ConfigReader.getConfigValue("token"));
-
     @Test
     public void createUserAndGetAllUsersTest() {
+        GraphQLApiService apiService = new GraphQLApiService(ConfigReader.getConfigValue("token"));
         User generatedUser = User.generateUser();
         User created = apiService.createUser(generatedUser);
 
@@ -27,6 +26,7 @@ public class GraphQLTest {
 
     @Test
     public void createUserAndGetByIdTest() {
+        GraphQLApiService apiService = new GraphQLApiService(ConfigReader.getConfigValue("token"));
         User generatedUser = User.generateUser();
         User created = apiService.createUser(generatedUser);
 
@@ -36,6 +36,7 @@ public class GraphQLTest {
 
     @Test
     public void createAndUpdateUserTest() {
+        GraphQLApiService apiService = new GraphQLApiService(ConfigReader.getConfigValue("token"));
         User generatedUser = User.generateUser();
         User created = apiService.createUser(generatedUser);
 
@@ -50,6 +51,7 @@ public class GraphQLTest {
 
     @Test
     public void createAndDeleteUserTest() {
+        GraphQLApiService apiService = new GraphQLApiService(ConfigReader.getConfigValue("token"));
         User generatedUser = User.generateUser();
         User created = apiService.createUser(generatedUser);
 

@@ -21,8 +21,6 @@ import java.util.Random;
 @Slf4j
 public class GorestTest {
 
-    private final RestApiService apiService = new RestApiService();
-
     @DataProvider(name = "type-update-requests")
     public static Object[][] getTypeUpdateRequests() {
         return new Object[][]{
@@ -33,6 +31,7 @@ public class GorestTest {
 
     @Test
     public void testCreateNewComment() {
+        RestApiService apiService = new RestApiService();
         List<Comment> existing = apiService.getAllComments();
         Integer postId = existing.get(new Random().nextInt(existing.size())).getPost_id();
 
@@ -46,6 +45,7 @@ public class GorestTest {
 
     @Test(dataProvider = "type-update-requests")
     public void testUpdateComment(HttpMethod updateRequestType) {
+        RestApiService apiService = new RestApiService();
         List<Comment> existing = apiService.getAllComments();
         Integer postId = existing.get(new Random().nextInt(existing.size())).getPost_id();
 
@@ -62,6 +62,7 @@ public class GorestTest {
 
     @Test
     public void testDeleteComment() {
+        RestApiService apiService = new RestApiService();
         List<Comment> existing = apiService.getAllComments();
         Integer postId = existing.get(new Random().nextInt(existing.size())).getPost_id();
 
@@ -77,6 +78,7 @@ public class GorestTest {
 
     @Test
     public void testCreateNewUser() {
+        RestApiService apiService = new RestApiService();
         User expected = User.generateUser();
         User created = apiService.createUser(expected);
 
@@ -87,6 +89,7 @@ public class GorestTest {
 
     @Test(dataProvider = "type-update-requests")
     public void testUpdateUser(HttpMethod updateRequestType) {
+        RestApiService apiService = new RestApiService();
         User expected = User.generateUser();
         User created = apiService.createUser(expected);
 
@@ -101,6 +104,7 @@ public class GorestTest {
 
     @Test
     public void testDeleteUser() {
+        RestApiService apiService = new RestApiService();
         User expected = User.generateUser();
         User created = apiService.createUser(expected);
 
