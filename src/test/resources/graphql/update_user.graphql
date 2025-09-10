@@ -1,0 +1,19 @@
+mutation UpdateUser(
+    $id: Int!
+    $name: String
+    $email: String
+    $gender: String
+    $status: String
+) {
+    updateUser(
+        input: { id: $id, name: $name, email: $email, gender: $gender, status: $status }
+    ) {
+        user {
+            id
+            name
+            email
+            gender
+            status
+        }
+    }
+}

@@ -1,0 +1,15 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite verbose="1" thread-count="5" name="GraphQL API tests" parallel="tests" annotations="JDK">
+
+    <parameter name="jenkinsJobName" value="Bench-API-GraphQL-Tests"/>
+    <parameter name="jenkinsJobType" value="api"/>
+    <parameter name="jenkinsEnvironments" value="DEV"/>
+
+
+    <test name="GraphQL API">
+        <classes>
+            <class name="GraphQLTest"/>
+        </classes>
+    </test>
+</suite>

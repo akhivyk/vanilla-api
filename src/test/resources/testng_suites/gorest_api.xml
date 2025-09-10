@@ -1,0 +1,15 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite verbose="1" thread-count="5" name="Gorest API tests" parallel="tests" annotations="JDK">
+
+    <parameter name="jenkinsJobName" value="Bench-API-Gorest-Tests"/>
+    <parameter name="jenkinsJobType" value="api"/>
+    <parameter name="jenkinsEnvironments" value="DEV"/>
+
+
+    <test name="Gorest API">
+        <classes>
+            <class name="GorestTest"/>
+        </classes>
+    </test>
+</suite>

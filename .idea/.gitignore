@@ -1,0 +1,15 @@
+*.class
+.mtj.tmp/
+*.jar
+.settings
+target
+.classpath
+.project
+.idea
+reports
+*.log
+*.iml
+*.DS_Store
+email.json
+src/main/resources/crypto1.key
+src/main/resources/dataToEncrypt.txt
